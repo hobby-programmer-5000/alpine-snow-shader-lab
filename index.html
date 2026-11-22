@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Alpine Photoreal Ski Race &amp; Custom Shader Lab — Korean DEM + Ultra GPU</title>
+  </head>
+  <body>
+    <canvas id="webgl-canvas"></canvas>
+
+    <!-- Top Left: Brand, Stage Campaign & Controls -->
+    <header class="hud-top-left glass-panel">
+      <div class="brand-row">
+        <span class="status-dot"></span>
+        <h1>ALPINE SHADER RACE LAB</h1>
+        <span class="badge-zero" id="badge-terrain-type">한라산 백록담</span>
+      </div>
+      <div class="control-pills" id="stage-pills">
+        <button class="pill active" data-stage="stage1">STAGE 1 · 한라산</button>
+        <button class="pill" data-stage="stage2">STAGE 2 · 설악산</button>
+        <button class="pill" data-stage="stage3">STAGE 3 · 파이널</button>
+        <button class="pill" data-stage="sandbox">SANDBOX</button>
+      </div>
+      <div class="control-pills">
+        <div class="pill-group" id="mode-pills">
+          <button class="pill active" data-mode="auto">AI RACE</button>
+          <button class="pill" data-mode="ski">DRIVE (WASD)</button>
+          <button class="pill" data-mode="brush">BRUSH</button>
+        </div>
+        <div class="pill-group" id="camera-pills">
+          <button class="pill active" data-cam="chase">CHASE</button>
+          <button class="pill" data-cam="pov">POV</button>
+          <button class="pill" data-cam="macro">MACRO</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Top Center: Ski Race Telemetry, Progress to FINISH & Wind Gust Indicator -->
+    <div id="race-bar" class="race-bar glass-panel">
+      <div class="race-top-row">
+        <span class="race-clock" id="race-clock">00:00.00</span>
+        <span class="race-gates" id="race-gates">GATE 0/8</span>
+        <span class="race-dist" id="race-dist">440m TO FINISH</span>
+        <span class="race-wind" id="race-wind">WIND 0 km/h</span>
+      </div>
+      <div class="race-progress-track">
+        <div class="race-progress-fill" id="race-progress-fill"></div>
+      </div>
+      <div class="race-alert" id="race-alert"></div>
+    </div>
+
+    <!-- Dedicated Live Upslope Avalanche Chase Threat Meter (visible whenever avalanche is active!) -->
+    <div id="avy-chase-banner" class="avy-chase-banner glass-panel hidden">
+      <div class="avy-chase-text" id="avy-chase-text">⚠ AVALANCHE CHASING 20m BEHIND!</div>
+      <div class="avy-chase-track">
+        <div class="avy-chase-fill" id="avy-chase-fill"></div>
+      </div>
+    </div>
+
+    <!-- Top Right: GPU Quality Presets, Slab Avy, Audio & Telemetry -->
+    <div class="hud-top-right glass-panel">
+      <div class="tod-pills" id="quality-pills">
+        <button class="pill" data-quality="low">LOW</button>
+        <button class="pill" data-quality="high">HIGH</button>
+        <button class="pill active pill-ultra" data-quality="ultra">ULTRA ★</button>
+      </div>
+      <div class="action-pills">
+        <button id="btn-slab-avy" class="pill pill-avy">SLAB AVY · G</button>
+        <button id="btn-audio" class="pill">AUDIO: OFF</button>
+        <button id="btn-toggle-panel" class="pill pill-accent">HIDE LAB</button>
+      </div>
+      <div class="telemetry-row">
+        <span id="stat-fps">60 FPS</span>
+        <span class="sep">|</span>
+        <span id="stat-speed">00 KM/H</span>
+        <span class="sep">|</span>
+        <span id="stat-alt">ALT 1805m</span>
+        <span class="sep">|</span>
+        <span id="stat-edge">EDGE 0°</span>
+      </div>
+      <div class="telemetry-row phys-row">
+        <span id="stat-slope">SLOPE 18°</span>
+        <span class="sep">|</span>
+        <span id="stat-surface">COLD POWDER</span>
+        <span class="sep">|</span>
+        <span id="stat-stance" class="stance-chip">SKATE</span>
+      </div>
+    </div>
+
+    <!-- Collapsible Right Inspector Panel with 2 Tabs: SHADER LAB | GPU ULTRA -->
+    <aside id="shader-panel" class="shader-panel glass-panel">
+      <div class="panel-tabs">
+        <button class="tab-btn active" data-tab="shader">SHADER LAB</button>
+        <button class="tab-btn" data-tab="gpu">GPU ULTRA 설정</button>
+      </div>
+
+      <!-- TAB 1: SHADER LAB -->
+      <div id="tab-shader" class="tab-content active">
+        <div class="panel-section">
+          <div class="section-title">RENDER VIEW MODE</div>
+          <select id="view-mode" class="select-input">
+            <option value="0">0 · Final Photoreal (ACES + God-Rays)</option>
+            <option value="1">1 · Track FBO Overlay (R:Trench G:Berm B:Ice)</option>
+            <option value="2">2 · World Normals (FBO + 3-Scale Sastrugi)</option>
+            <option value="3">3 · Trench Self-Shadow Only (FBO Horizon)</option>
+            <option value="4">4 · Snow SSS + Diamond Glints Only</option>
+            <option value="5">5 · Wireframe Adaptive Clipmap</option>
+            <option value="6">6 · Horizon + Cloud Shadows &amp; AO Map</option>
+          </select>
+        </div>
+
+        <div class="panel-section">
+          <div class="section-title">TIME OF DAY &amp; SANDBOX TERRAIN</div>
+          <div class="tod-pills" id="tod-pills">
+            <button class="pill active" data-tod="bluebird">09:00 CRISP</button>
+            <button class="pill" data-tod="alpine">15:30 ALPINE</button>
+            <button class="pill" data-tod="sunset">17:45 SUNSET</button>
+          </div>
+          <div class="tod-pills" id="sandbox-terrain-pills">
+            <button class="pill" data-terrain="procedural">PROCEDURAL</button>
+            <button class="pill active" data-terrain="hallasan">한라산</button>
+            <button class="pill" data-terrain="seoraksan">설악산</button>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="section-title">SHADER PASS TOGGLES</div>
+          <div class="toggle-grid">
+            <label class="toggle-item"><input type="checkbox" id="tog-tracks" checked /><span>Carved Tracks</span></label>
+            <label class="toggle-item"><input type="checkbox" id="tog-berms" checked /><span>Flanking Berms</span></label>
+            <label class="toggle-item"><input type="checkbox" id="tog-selfshadow" checked /><span>Trench Shadow</span></label>
+            <label class="toggle-item"><input type="checkbox" id="tog-sastrugi" checked /><span>3x Sastrugi</span></label>
+            <label class="toggle-item"><input type="checkbox" id="tog-glints" checked /><span>SSS &amp; Glints</span></label>
+            <label class="toggle-item"><input type="checkbox" id="tog-granite" checked /><span>Triplanar Rock</span></label>
+            <label class="toggle-item"><input type="checkbox" id="tog-postfx" checked /><span>HDR + God-Rays</span></label>
+            <label class="toggle-item"><input type="checkbox" id="tog-pip" checked /><span>PiP FBO Map</span></label>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="section-title">UNIFORM SLIDERS</div>
+          <div class="slider-row">
+            <label>Trench Depth <span id="val-trench">0.34 m</span></label>
+            <input type="range" id="sl-trench" min="0.05" max="0.65" step="0.01" value="0.34" />
+          </div>
+          <div class="slider-row">
+            <label>Berm Height <span id="val-berm">0.24 m</span></label>
+            <input type="range" id="sl-berm" min="0.00" max="0.50" step="0.01" value="0.24" />
+          </div>
+          <div class="slider-row">
+            <label>Sun Elevation <span id="val-sunelev">42°</span></label>
+            <input type="range" id="sl-sunelev" min="5" max="65" step="1" value="42" />
+          </div>
+          <div class="slider-row">
+            <label>Sun Azimuth <span id="val-sunazim">118°</span></label>
+            <input type="range" id="sl-sunazim" min="-180" max="180" step="1" value="118" />
+          </div>
+          <div class="slider-row">
+            <label>Glints &amp; Ice Spec <span id="val-glint">1.25</span></label>
+            <input type="range" id="sl-glint" min="0.0" max="2.5" step="0.05" value="1.25" />
+          </div>
+          <div class="slider-row">
+            <label>Sastrugi Strength <span id="val-sastrugi">0.92</span></label>
+            <input type="range" id="sl-sastrugi" min="0.0" max="1.8" step="0.05" value="0.92" />
+          </div>
+        </div>
+
+        <div class="panel-actions">
+          <button id="btn-clear-tracks" class="pill pill-danger">CLEAR FBO</button>
+          <button id="btn-reset-pos" class="pill pill-accent">RESTART RUN</button>
+        </div>
+      </div>
+
+      <!-- TAB 2: ADVANCED GPU / PHOTOREAL SETTINGS -->
+      <div id="tab-gpu" class="tab-content">
+        <div class="gpu-info-box" id="gpu-info-box">GPU Detecting...</div>
+
+        <div class="panel-section">
+          <div class="section-title">HIGH-END GPU PIPELINE</div>
+          <div class="adv-row">
+            <label>Render DPR Scale</label>
+            <select id="adv-dpr" class="select-input compact">
+              <option value="1">1.0x (Fast)</option>
+              <option value="1.5">1.5x (Sharp)</option>
+              <option value="2" selected>2.0x (Ultra Native)</option>
+            </select>
+          </div>
+          <div class="adv-row">
+            <label>Near Track FBO Res</label>
+            <select id="adv-fbo" class="select-input compact">
+              <option value="1024">1024² (4.7 cm/px)</option>
+              <option value="1536">1536² (3.1 cm/px)</option>
+              <option value="2048" selected>2048² (2.3 cm/px)</option>
+            </select>
+          </div>
+          <div class="adv-row">
+            <label>Clipmap Grid Density</label>
+            <select id="adv-clipmap" class="select-input compact">
+              <option value="220">220² (12.7 cm)</option>
+              <option value="280">280² (10.0 cm)</option>
+              <option value="340" selected>340² (8.2 cm Ultra)</option>
+            </select>
+          </div>
+          <div class="adv-row">
+            <label>Hardware MSAA (HDR RT)</label>
+            <select id="adv-msaa" class="select-input compact">
+              <option value="0">OFF (0x)</option>
+              <option value="4" selected>4x Hardware MSAA</option>
+            </select>
+          </div>
+          <div class="adv-row">
+            <label>Trench Horizon Steps</label>
+            <select id="adv-trenchsteps" class="select-input compact">
+              <option value="8">8 Steps (Low)</option>
+              <option value="12">12 Steps (High)</option>
+              <option value="16" selected>16 Steps (Ultra)</option>
+            </select>
+          </div>
+          <div class="adv-row">
+            <label>Volumetric God-Rays</label>
+            <select id="adv-godrays" class="select-input compact">
+              <option value="16">16 Steps (Low)</option>
+              <option value="22">22 Steps (High)</option>
+              <option value="32" selected>32 Steps (Ultra)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="section-title">PHOTOREAL SHADER FEATURES</div>
+          <div class="toggle-grid">
+            <label class="toggle-item"><input type="checkbox" id="adv-cloudshadow" checked /><span>Cloud Shadows</span></label>
+            <label class="toggle-item"><input type="checkbox" id="adv-contactshadow" checked /><span>Tree-Well Shadows</span></label>
+            <label class="toggle-item"><input type="checkbox" id="adv-crevasses" checked /><span>3D Crevasses</span></label>
+            <label class="toggle-item"><input type="checkbox" id="adv-fxaa" checked /><span>FXAA Luma AA</span></label>
+            <label class="toggle-item"><input type="checkbox" id="adv-lensfx" checked /><span>Lens Ghosts/Drops</span></label>
+          </div>
+        </div>
+
+        <div class="slider-row">
+          <label>Wind Snow-Fill Decay <span id="val-decay">0.00</span></label>
+          <input type="range" id="sl-decay" min="0.0" max="1.0" step="0.02" value="0.0" />
+        </div>
+      </div>
+    </aside>
+
+    <!-- FINISH LINE PODIUM MODAL (Shown cleanly upon crossing Finish Arch!) -->
+    <div id="finish-modal" class="finish-modal hidden">
+      <div class="finish-card glass-panel">
+        <div class="finish-badge" id="finish-medal">GOLD MEDAL</div>
+        <h2 id="finish-title">STAGE 1 COMPLETE!</h2>
+        <div class="finish-time" id="finish-time">00:31.42</div>
+        <div class="finish-stats-grid">
+          <div class="f-stat"><span>GATES CLEARED</span><b id="f-gates">8 / 8</b></div>
+          <div class="f-stat"><span>PENALTIES</span><b id="f-penalties">+0.0s</b></div>
+          <div class="f-stat"><span>TOP SPEED</span><b id="f-speed">68 KM/H</b></div>
+          <div class="f-stat"><span>NEAR MISSES</span><b id="f-nearmiss">3</b></div>
+          <div class="f-stat"><span>AIRTIME</span><b id="f-airtime">2.4s</b></div>
+          <div class="f-stat"><span>TOTAL SCORE</span><b id="f-score">2,150</b></div>
+        </div>
+        <div class="finish-actions">
+          <button id="btn-finish-retry" class="pill">RETRY STAGE</button>
+          <button id="btn-finish-next" class="pill pill-ultra">NEXT STAGE →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Left Live Ping-Pong FBO Monitor -->
+    <div id="pip-container" class="pip-container">
+      <div class="pip-header glass-panel">
+        <span id="pip-title">DUAL FBO (2048²·48m + 512²·240m)</span>
+        <span class="pip-legend"><b class="c-r">R</b>Trench <b class="c-g">G</b>Berm <b class="c-b">B</b>Ice</span>
+      </div>
+      <div id="pip-viewport" class="pip-viewport"></div>
+    </div>
+
+    <!-- Bottom Hint Strip -->
+    <div id="hint-bar" class="hint-bar glass-panel">
+      <span id="hint-text">STAGE 1 · Pass Slalom Gates to the Checkered FINISH Arch · Switch to DRIVE (WASD + Space) to race!</span>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
