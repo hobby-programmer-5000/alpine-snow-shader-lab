@@ -6,6 +6,13 @@
 
 import * as THREE from 'three';
 
+function resolvePublicUrl(relPath) {
+  const base = import.meta.env.BASE_URL || './';
+  const cleanBase = base.endsWith('/') ? base : `${base}/`;
+  const cleanPath = String(relPath).replace(/^\/+/, '');
+  return `${cleanBase}${cleanPath}`;
+}
+
 function loadImageRGBA(url) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -43,7 +50,7 @@ export class KoreanDemLibrary {
 
   async ensureManifest() {
     if (this.manifest) return this.manifest;
-    const res = await fetch('/dem/dem_manifest.json');
+    const res = await fetch(resolvePublicUrl('dem/dem_manifest.json'));
     if (!res.ok) throw new Error(`Manifest HTTP ${res.status}`);
     this.manifest = await res.json();
     return this.manifest;
@@ -57,8 +64,8 @@ export class KoreanDemLibrary {
     if (!meta) throw new Error(`Unknown mountain DEM: ${id}`);
 
     const [demImg, horImg] = await Promise.all([
-      loadImageRGBA(meta.demUrl),
-      loadImageRGBA(meta.horizonUrl)
+      loadImageRGBA(resolvePublicUrl(meta.demUrl)),
+      loadImageRGBA(resolvePublicUrl(meta.horizonUrl))
     ]);
 
     const size = demImg.width;

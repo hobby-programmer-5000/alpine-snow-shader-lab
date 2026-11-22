@@ -2,6 +2,9 @@
 
 실시간 WebGL2 / Three.js 기반 **제로-에셋(외부 3D 모델·오디오 0개) 실사 알파인 스키 레이스 & 커스텀 셰이더 랩**입니다. Google DeepMind 및 Google AI Studio의 몽블랑/샤모니 스키 데모에서 영감을 받아 클린룸으로 구현했으며, 최신 컴퓨터 그래픽스 논문(Max 1988, Losasso & Hoppe 2004, Mitchell 2007, Bruneton & Neyret 2008, Barré-Brisebois & Bouchard 2011, Lottes 2011, Barré-Brisebois 2014, Jimenez 2014, Yan et al. 2014, Schneider & Vos 2015, Narkowicz 2016, Hillaire 2020, Chermain et al. 2020)과 알파인 스키/눈사태 물리(Lind & Sanders 2004, Voellmy 1955)를 결합했습니다.
 
+**바로 플레이하기: https://hobby-programmer-5000.github.io/alpine-snow-shader-lab/**
+
+> 기본 모드는 `AI RACE`(20 Hz MPC AI 완주 관전)이며, 상단 `DRIVE (WASD)` 버튼으로 전환하면 직접 조작(`W/A/S/D` 카빙·턱·브레이크, `Space` 점프, `E` 폴 추진, `G` 눈사태 발동)으로 3개 스테이지를 주행할 수 있습니다.
 > 상세 참고문헌 및 DOI/원문 링크는 [REFERENCES.md](./REFERENCES.md), 서드파티 오픈소스·데이터셋 고지는 [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md), 비상업적 라이선스 전문은 [LICENSE](./LICENSE)를 참고하세요.
 
 ---
