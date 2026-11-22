@@ -6,6 +6,12 @@
 
 ---
 
+## 데모 영상 (Stage 1 · 한라산 `AI RACE`, `ULTRA ★`, 60 FPS 실기 녹화)
+
+- [Stage 1 한라산 백록담 AI 레이스 완주 영상 (`media/stage1-hallasan-ai-race.mp4`)](./media/stage1-hallasan-ai-race.mp4) — `1280×720` H.264 MP4 (`31.4s`, `GOLD MEDAL 00:29.00`, `GATE 8/8`, `+0.0s`, 충돌 0회, 피니시 아치 중앙 오차 `-0.05m`)
+
+---
+
 ## 실행 방법
 
 ```bash
